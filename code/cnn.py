@@ -10,11 +10,11 @@ from keras.preprocessing.sequence import pad_sequences
 
 # Performs classification using CNN.
 
-FREQ_DIST_FILE = '../train-processed-freqdist.pkl'
-BI_FREQ_DIST_FILE = '../train-processed-freqdist-bi.pkl'
-TRAIN_PROCESSED_FILE = '../train-processed.csv'
-TEST_PROCESSED_FILE = '../test-processed.csv'
-GLOVE_FILE = './dataset/glove-seeds.txt'
+FREQ_DIST_FILE = '../dataset/training-processed-freqdist.pkl'
+BI_FREQ_DIST_FILE = '../dataset/training-processed-freqdist-bi.pkl'
+TRAIN_PROCESSED_FILE = '../dataset/training-processed.csv'
+TEST_PROCESSED_FILE = '../dataset/test-processed.csv'
+GLOVE_FILE = '../dataset/glove.twitter.27B.200d.txt'
 dim = 200
 
 
@@ -22,10 +22,10 @@ def get_glove_vectors(vocab):
     """
     Extracts glove vectors from seed file only for words present in vocab.
     """
-    print 'Looking for GLOVE seeds'
+    print('Looking for GLOVE seeds')
     glove_vectors = {}
     found = 0
-    with open(GLOVE_FILE, 'r') as glove_file:
+    with open(GLOVE_FILE, 'r', encoding="ISO-8859-1") as glove_file:
         for i, line in enumerate(glove_file):
             utils.write_status(i + 1, 0)
             tokens = line.strip().split()
@@ -34,7 +34,7 @@ def get_glove_vectors(vocab):
                 vector = [float(e) for e in tokens[1:]]
                 glove_vectors[word] = np.array(vector)
                 found += 1
-    print '\n'
+    print('\n')
     return glove_vectors
 
 
@@ -61,8 +61,8 @@ def process_tweets(csv_file, test_file=True):
     """
     tweets = []
     labels = []
-    print 'Generating feature vectors'
-    with open(csv_file, 'r') as csv:
+    print('Generating feature vectors')
+    with open(csv_file, 'r', encoding="ISO-8859-1") as csv:
         lines = csv.readlines()
         total = len(lines)
         for i, line in enumerate(lines):
@@ -77,7 +77,7 @@ def process_tweets(csv_file, test_file=True):
                 tweets.append(feature_vector)
                 labels.append(int(sentiment))
             utils.write_status(i + 1, total)
-    print '\n'
+    print('\n')
     return tweets, np.array(labels)
 
 
@@ -101,8 +101,10 @@ if __name__ == '__main__':
             embedding_matrix[i] = glove_vector
     tweets = pad_sequences(tweets, maxlen=max_length, padding='post')
     shuffled_indices = np.random.permutation(tweets.shape[0])
+
     tweets = tweets[shuffled_indices]
     labels = labels[shuffled_indices]
+
     if train:
         model = Sequential()
         model.add(Embedding(vocab_size + 1, dim, weights=[embedding_matrix], input_length=max_length))
@@ -115,16 +117,16 @@ if __name__ == '__main__':
         model.add(Dense(600))
         model.add(Dropout(0.5))
         model.add(Activation('relu'))
-        model.add(Dense(1))
-        model.add(Activation('sigmoid'))
-        model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+        model.add(Dense(5))
+        model.add(Activation('softmax'))
+        model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['acc'])
         filepath = "./models/4cnn-{epoch:02d}-{loss:0.3f}-{acc:0.3f}-{val_loss:0.3f}-{val_acc:0.3f}.hdf5"
         checkpoint = ModelCheckpoint(filepath, monitor="loss", verbose=1, save_best_only=True, mode='min')
         reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=2, min_lr=0.000001)
-        model.fit(tweets, labels, batch_size=128, epochs=8, validation_split=0.1, shuffle=True, callbacks=[checkpoint, reduce_lr])
+        model.fit(tweets, labels, batch_size=128, epochs=1, validation_split=0.1, shuffle=True, callbacks=[checkpoint, reduce_lr])
     else:
         model = load_model(sys.argv[1])
-        print model.summary()
+        print(model.summary())
         test_tweets, _ = process_tweets(TEST_PROCESSED_FILE, test_file=True)
         test_tweets = pad_sequences(test_tweets, maxlen=max_length, padding='post')
         predictions = model.predict(test_tweets, batch_size=128, verbose=1)

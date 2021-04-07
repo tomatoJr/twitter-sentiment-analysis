@@ -1,8 +1,11 @@
 import re
 import sys
+import pandas as pd
 from utils import write_status
 from nltk.stem.porter import PorterStemmer
 
+CSV_RAW_PATH = "../dataset/"
+CSV_PROCESSED_PATH = "../dataset/"
 
 def preprocess_word(word):
     # Remove punctuation
@@ -71,37 +74,47 @@ def preprocess_tweet(tweet):
 def preprocess_csv(csv_file_name, processed_file_name, test_file=False):
     save_to_file = open(processed_file_name, 'w')
 
-    with open(csv_file_name, 'r') as csv:
+    with open(csv_file_name, 'r', encoding="ISO-8859-1") as csv:
         lines = csv.readlines()
+
         total = len(lines)
         for i, line in enumerate(lines):
-            tweet_id = line[:line.find(',')]
-            if not test_file:
-                line = line[1 + line.find(','):]
-                positive = int(line[:line.find(',')])
-            line = line[1 + line.find(','):]
+            line = line.replace('"', '')
+            line = line.split(",")
+            tweet_id = line[1]
+            tag = int(line[0])
+            # if not test_file:
+            #     line = line[1 + line.find(','):]
+            #     positive = int(line[:line.find(',')])
+            line = line[5:]
+            line = ",".join(line)
             tweet = line
+
             processed_tweet = preprocess_tweet(tweet)
             if not test_file:
                 save_to_file.write('%s,%d,%s\n' %
-                                   (tweet_id, positive, processed_tweet))
+                                   (tweet_id, tag, processed_tweet))
             else:
                 save_to_file.write('%s,%s\n' %
                                    (tweet_id, processed_tweet))
             write_status(i + 1, total)
+
     save_to_file.close()
-    print '\nSaved processed tweets to: %s' % processed_file_name
+    print('\nSaved processed tweets to: %s' % processed_file_name)
     return processed_file_name
 
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:
-        print 'Usage: python preprocess.py <raw-CSV>'
+        print('Usage: python preprocess.py <raw-CSV>')
         exit()
     use_stemmer = False
     csv_file_name = sys.argv[1]
+    csv_file_name = CSV_RAW_PATH + csv_file_name
+
     processed_file_name = sys.argv[1][:-4] + '-processed.csv'
     if use_stemmer:
         porter_stemmer = PorterStemmer()
         processed_file_name = sys.argv[1][:-4] + '-processed-stemmed.csv'
+    processed_file_name = CSV_PROCESSED_PATH + processed_file_name
     preprocess_csv(csv_file_name, processed_file_name, test_file=False)
