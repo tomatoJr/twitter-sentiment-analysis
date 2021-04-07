@@ -2,11 +2,15 @@
 
 ![Status badge](https://img.shields.io/badge/Status-Archived-important)
 
-**Update**(21 Sept. 2018): I don't actively maintain this repository. This work was done for a course project and the dataset cannot be released because I don't own the copyright. However, everything in this repository can be easily modified to work with other datasets. I recommend reading the [sloppily written project report](https://github.com/abdulfatir/twitter-sentiment-analysis/tree/master/docs/report.pdf) for this project which can be found in `docs/`.
+**Update**(Apr 6, 2021) This repo is based on [Sentiment Analysis on Tweets](https://github.com/abdulfatir/twitter-sentiment-analysis). This repo is used for CSCE 638 project.
 
 ## Dataset Information
 
-We use and compare various different methods for sentiment analysis on tweets (a binary classification problem). The training dataset is expected to be a csv file of type `tweet_id,sentiment,tweet` where the `tweet_id` is a unique integer identifying the tweet, `sentiment` is either `1` (positive) or `0` (negative), and `tweet` is the tweet enclosed in `""`. Similarly, the test dataset is a csv file of type `tweet_id,tweet`. Please note that csv headers are not expected and should be removed from the training and test datasets.  
+We use and compare various different methods for sentiment analysis on tweets (a multi-class classification problem). 
+
+Download the dataset [here](https://www.kaggle.com/kazanova/sentiment140). 
+
+If you want to run models like CNN or LSTM, a pre-trained word embedding file is required. Download [here](https://github.com/stanfordnlp/GloVe). In this project we use `glove.twitter.27B.zip`.
 
 ## Requirements
 
@@ -23,6 +27,14 @@ The library requirements specific to some methods are:
 **Note**: It is recommended to use Anaconda distribution of Python.
 
 ## Usage
+
+### Preparation
+
+Make sure the dataset and glove embedding file is in the `twitter-sentiment-analysis/dataset` directory. Rename the dataset file to `training.csv`. We don't need test file here since the training dataset can be split to 10% of validation data.
+
+Make sure create a directory `models` in the directory `twitter-sentiment-analysis/code`.
+
+As for embedding file, use `glove.twitter.27B.200d.txt` since the dimension of embedding defined in `cnn.py` is 200.
 
 ### Preprocessing 
 
