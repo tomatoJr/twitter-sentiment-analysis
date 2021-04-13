@@ -10,10 +10,12 @@ from keras.preprocessing.sequence import pad_sequences
 
 # Performs classification using LSTM network.
 
-FREQ_DIST_FILE = '../train-processed-freqdist.pkl'
-BI_FREQ_DIST_FILE = '../train-processed-freqdist-bi.pkl'
-TRAIN_PROCESSED_FILE = '../train-processed.csv'
-TEST_PROCESSED_FILE = '../test-processed.csv'
+FREQ_DIST_FILE = '../dataset/training-processed-freqdist.pkl'
+BI_FREQ_DIST_FILE = '../dataset/training-processed-freqdist-bi.pkl'
+TRAIN_PROCESSED_FILE = '../dataset/training-processed.csv'
+TEST_PROCESSED_FILE = '../dataset/test-processed.csv'
+
+
 GLOVE_FILE = './dataset/glove-seeds.txt'
 dim = 200
 
@@ -94,7 +96,8 @@ if __name__ == '__main__':
     labels = labels[shuffled_indices]
     if train:
         model = Sequential()
-        model.add(Embedding(vocab_size + 1, dim, weights=[embedding_matrix], input_length=max_length))
+        model.add(Embedding(vocab_size + 1, dim,
+                            weights=[embedding_matrix], input_length=max_length))
         model.add(Dropout(0.4))
         model.add(LSTM(128))
         model.add(Dense(64))
@@ -102,17 +105,23 @@ if __name__ == '__main__':
         model.add(Activation('relu'))
         model.add(Dense(1))
         model.add(Activation('sigmoid'))
-        model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+        model.compile(loss='binary_crossentropy',
+                      optimizer='adam', metrics=['accuracy'])
         filepath = "./models/lstm-{epoch:02d}-{loss:0.3f}-{acc:0.3f}-{val_loss:0.3f}-{val_acc:0.3f}.hdf5"
-        checkpoint = ModelCheckpoint(filepath, monitor="loss", verbose=1, save_best_only=True, mode='min')
-        reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=2, min_lr=0.000001)
+        checkpoint = ModelCheckpoint(
+            filepath, monitor="loss", verbose=1, save_best_only=True, mode='min')
+        reduce_lr = ReduceLROnPlateau(
+            monitor='val_loss', factor=0.5, patience=2, min_lr=0.000001)
         print(model.summary())
-        model.fit(tweets, labels, batch_size=128, epochs=5, validation_split=0.1, shuffle=True, callbacks=[checkpoint, reduce_lr])
+        model.fit(tweets, labels, batch_size=128, epochs=5, validation_split=0.1,
+                  shuffle=True, callbacks=[checkpoint, reduce_lr])
     else:
         model = load_model(sys.argv[1])
         print(model.summary())
         test_tweets, _ = process_tweets(TEST_PROCESSED_FILE, test_file=True)
-        test_tweets = pad_sequences(test_tweets, maxlen=max_length, padding='post')
+        test_tweets = pad_sequences(
+            test_tweets, maxlen=max_length, padding='post')
         predictions = model.predict(test_tweets, batch_size=128, verbose=1)
-        results = zip(map(str, range(len(test_tweets))), np.round(predictions[:, 0]).astype(int))
+        results = zip(map(str, range(len(test_tweets))),
+                      np.round(predictions[:, 0]).astype(int))
         utils.save_results_to_csv(results, 'lstm.csv')
